@@ -2,9 +2,10 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+import { ModelDesigner, QueryDesigner, ResultViewer } from './pages'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [currentPage, setCurrentPage] = useState<'model' | 'query' | 'result'>('model')
 
   return (
     <>
@@ -16,14 +17,16 @@ function App() {
           <img src={reactLogo} className="logo react" alt="React logo" />
         </a>
       </div>
-      <h1>Vite + React</h1>
+      <h1>DDAGS Frontend</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
+        <div style={{ marginBottom: '20px' }}>
+          <button onClick={() => setCurrentPage('model')}>Model Designer</button>
+          <button onClick={() => setCurrentPage('query')} style={{ marginLeft: '10px' }}>Query Designer</button>
+          <button onClick={() => setCurrentPage('result')} style={{ marginLeft: '10px' }}>Result Viewer</button>
+        </div>
+        {currentPage === 'model' && <ModelDesigner />}
+        {currentPage === 'query' && <QueryDesigner />}
+        {currentPage === 'result' && <ResultViewer />}
       </div>
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
