@@ -1,0 +1,56 @@
+.model-designer-graph {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+}
+
+.model-designer-graph svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* 实体样式 */
+.model-designer-graph .entities .entity {
+  cursor: move;
+}
+
+.model-designer-graph .entities .entity .entity-background {
+  transition: stroke 0.2s, stroke-width 0.2s, filter 0.2s;
+}
+
+.model-designer-graph .entities .entity:hover .entity-background {
+  stroke: #adb5bd;
+}
+
+/* 关系样式 */
+.model-designer-graph .relationships line {
+  transition: stroke-opacity 0.2s, stroke-width 0.2s;
+}
+
+.model-designer-graph .relationships line:hover {
+  stroke-opacity: 1;
+  stroke-width: 3;
+}
+
+.model-designer-graph .relationship-label {
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 属性文本 */
+.model-designer-graph .attribute-name,
+.model-designer-graph .attribute-type {
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 实体名称 */
+.model-designer-graph .entity-name {
+  pointer-events: none;
+  user-select: none;
+}

@@ -1,16 +1,7 @@
 /**
- * 结果查看器页面
+ * 结果查看器页面（导出类组件）
  */
 
-import React from 'react';
-
-const ResultViewer: React.FC = () => {
-  return (
-    <div>
-      <h1>Result Viewer</h1>
-      <p>结果查看器页面</p>
-    </div>
-  );
-};
-
-export default ResultViewer;
+export { ResultViewerComponent as default } from './ResultViewerComponent';
+export { ResultViewerComponent } from './ResultViewerComponent';
+export type { ResultViewerComponentProps } from './ResultViewerComponent';

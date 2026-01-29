@@ -2,6 +2,14 @@
  * 模型组件统一导出
  */
 
-// export { default as ModelList } from './ModelList';
-// export { default as ModelEditor } from './ModelEditor';
-// export { default as ModelViewer } from './ModelViewer';
+export { ModelDesignerGraphComponent } from './ModelDesignerGraphComponent';
+export { ModelDesignerGraph } from './ModelDesignerGraph';
+export type {
+  Entity,
+  EntityAttribute,
+  Relationship,
+  ModelData,
+  ModelDesignerGraphConfig,
+  ModelDesignerGraphEvents,
+} from './ModelDesignerGraphComponent';
+export type { ModelDesignerGraphProps } from './ModelDesignerGraph';

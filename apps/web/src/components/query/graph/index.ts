@@ -2,5 +2,7 @@
  * 查询图组件统一导出
  */
 
-// export { default as QueryGraph } from './QueryGraph';
-// export { default as QueryGraphEditor } from './QueryGraphEditor';
+export { default as Graph } from './Graph';
+export { GraphComponent } from './GraphComponent';
+export type { GraphComponentConfig, GraphComponentEvents } from './GraphComponent';
+export type { GraphData, GraphNode, GraphEdge } from '../../../types/graph';

@@ -1,16 +1,7 @@
 /**
- * 模型设计器页面
+ * 模型设计器页面（导出类组件）
  */
 
-import React from 'react';
-
-const ModelDesigner: React.FC = () => {
-  return (
-    <div>
-      <h1>Model Designer</h1>
-      <p>模型设计器页面</p>
-    </div>
-  );
-};
-
-export default ModelDesigner;
+export { ModelDesignerComponent as default } from './ModelDesignerComponent';
+export { ModelDesignerComponent } from './ModelDesignerComponent';
+export type { ModelDesignerComponentProps } from './ModelDesignerComponent';

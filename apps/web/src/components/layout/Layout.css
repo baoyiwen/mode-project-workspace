@@ -1,0 +1,112 @@
+.layout-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 中心区域 - 占满全屏 */
+.layout-center {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: #ffffff;
+}
+
+/* 悬浮菜单 - 顶部 */
+.layout-menu-top-floating {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.layout-menu-top-floating > * {
+  pointer-events: auto;
+}
+
+/* 悬浮菜单 - 左侧 */
+.layout-menu-left-floating {
+  position: fixed;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.layout-menu-left-floating > * {
+  pointer-events: auto;
+}
+
+/* 悬浮菜单 - 右侧 */
+.layout-menu-right-floating {
+  position: fixed;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.layout-menu-right-floating > * {
+  pointer-events: auto;
+}
+
+/* 悬浮菜单 - 底部 */
+.layout-menu-bottom-floating {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.layout-menu-bottom-floating > * {
+  pointer-events: auto;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .layout-left,
+  .layout-right {
+    position: absolute;
+    height: 100%;
+    transition: transform 0.3s ease;
+  }
+
+  .layout-left {
+    left: 0;
+    transform: translateX(-100%);
+  }
+
+  .layout-left.show {
+    transform: translateX(0);
+  }
+
+  .layout-right {
+    right: 0;
+    transform: translateX(100%);
+  }
+
+  .layout-right.show {
+    transform: translateX(0);
+  }
+}

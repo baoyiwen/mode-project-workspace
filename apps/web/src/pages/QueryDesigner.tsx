@@ -1,16 +1,7 @@
 /**
- * 查询设计器页面
+ * 查询设计器页面（导出类组件）
  */
 
-import React from 'react';
-
-const QueryDesigner: React.FC = () => {
-  return (
-    <div>
-      <h1>Query Designer</h1>
-      <p>查询设计器页面</p>
-    </div>
-  );
-};
-
-export default QueryDesigner;
+export { QueryDesignerComponent as default } from './QueryDesignerComponent';
+export { QueryDesignerComponent } from './QueryDesignerComponent';
+export type { QueryDesignerComponentProps } from './QueryDesignerComponent';

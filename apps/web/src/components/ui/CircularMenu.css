@@ -1,0 +1,158 @@
+.circular-menu {
+  display: flex;
+  z-index: 100;
+}
+
+/* 位置样式 */
+.circular-menu-top {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.circular-menu-bottom {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.circular-menu-left {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.circular-menu-right {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 菜单项 */
+.circular-menu-item {
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #1e6091 0%, #2980b9 100%);
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(30, 96, 145, 0.3);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: visible;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.circular-menu-item:hover:not(.disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(30, 96, 145, 0.4);
+  background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
+}
+
+.circular-menu-item:active:not(.disabled) {
+  transform: scale(0.95);
+}
+
+.circular-menu-item.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+}
+
+.circular-menu-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+}
+
+/* 默认文字样式（在圆圈内） */
+.circular-menu-item-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 0.5rem;
+  word-wrap: break-word;
+  line-height: 1.2;
+  max-width: 100%;
+}
+
+/* 自定义图标内容（图标和文字上下排列） */
+.circular-menu-item-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+}
+
+.circular-menu-item-icon {
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.circular-menu-item-emoji {
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.circular-menu-item-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.1;
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+/* 大尺寸调整 */
+.circular-menu-item[style*="width: 80px"],
+.circular-menu-item[style*="width: 96px"] {
+  .circular-menu-item-text {
+    font-size: 0.875rem;
+  }
+
+  .circular-menu-item-icon {
+    font-size: 1.5rem;
+  }
+
+  .circular-menu-item-emoji {
+    font-size: 1.75rem;
+  }
+
+  .circular-menu-item-label {
+    font-size: 0.75rem;
+  }
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .circular-menu-item {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .circular-menu-item-text {
+    font-size: 0.625rem;
+  }
+
+  .circular-menu-item-icon {
+    font-size: 1rem;
+  }
+
+  .circular-menu-item-emoji {
+    font-size: 1.25rem;
+  }
+
+  .circular-menu-item-label {
+    font-size: 0.5rem;
+  }
+}
