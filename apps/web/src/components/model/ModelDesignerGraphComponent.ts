@@ -418,12 +418,22 @@ export class ModelDesignerGraphComponent extends SVGComponent<ModelDesignerGraph
     if (enableDrag && this.simulation) {
       const snapThreshold = this.config.snapThreshold ?? 20; // 增大吸附阈值
       const showGuides = this.config.showGuides ?? true;
+      
+      // 用于跟踪拖拽状态
+      let dragStartX = 0;
+      let dragStartY = 0;
+      let hasDragged = false;
 
       const dragHandler = d3
         .drag<SVGGElement, Entity>()
         .on('start', (event, d) => {
           // 阻止事件冒泡到 SVG 的 zoom 处理器
           event.sourceEvent.stopPropagation();
+          
+          // 记录起始位置
+          dragStartX = d.x || 0;
+          dragStartY = d.y || 0;
+          hasDragged = false;
           
           // 固定所有实体的当前位置（包括被拖拽的）
           this.data.entities.forEach((entity) => {
@@ -445,6 +455,14 @@ export class ModelDesignerGraphComponent extends SVGComponent<ModelDesignerGraph
           
           let newX = event.x;
           let newY = event.y;
+          
+          // 检测是否有实际移动（超过5像素认为是拖拽）
+          const moveDistance = Math.sqrt(
+            Math.pow(newX - dragStartX, 2) + Math.pow(newY - dragStartY, 2)
+          );
+          if (moveDistance > 5) {
+            hasDragged = true;
+          }
           
           // 检测对齐并吸附
           if (showGuides) {
@@ -474,14 +492,21 @@ export class ModelDesignerGraphComponent extends SVGComponent<ModelDesignerGraph
           // 隐藏辅助线
           this.clearGuideLines();
           
-          // 更新拖拽实体的最终位置
-          d.x = d.fx as number;
-          d.y = d.fy as number;
-          
-          // 保持所有实体固定，不再受力导向影响
-          // 这样可以防止拖拽结束后其他实体移动
-          
-          this.events.onEntityUpdate?.(d);
+          // 如果没有实际拖拽（移动距离很小），视为点击
+          if (!hasDragged) {
+            this.selectedEntityId = d.id;
+            this.updateSelection();
+            this.events.onEntityClick?.(d);
+          } else {
+            // 更新拖拽实体的最终位置
+            d.x = d.fx as number;
+            d.y = d.fy as number;
+            
+            // 保持所有实体固定，不再受力导向影响
+            // 这样可以防止拖拽结束后其他实体移动
+            
+            this.events.onEntityUpdate?.(d);
+          }
         });
 
       entityGroup.call(dragHandler);
