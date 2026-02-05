@@ -8,6 +8,7 @@ import type { Entity, ModelData, EntityField } from '../components/model/ModelDe
 import type { AppMode } from '../types/modes';
 import { ModelDataManager } from '../managers/ModelDataManager';
 import { t, i18n, LOCALE_CONFIGS, type Locale } from '../i18n';
+import { appEventActor } from '../state/appEventCenter';
 import './ModelDesigner.css';
 
 export interface ModelDesignerComponentProps {
@@ -31,6 +32,8 @@ export class ModelDesignerComponent extends Component<ModelDesignerComponentProp
   private dataManager: ModelDataManager;
   private unsubscribe?: () => void;
   private unsubscribeI18n?: () => void;
+  private appEventSub?: { unsubscribe: () => void };
+  private lastCommandNonce = 0;
 
   constructor(props: ModelDesignerComponentProps) {
     super(props);
@@ -70,11 +73,30 @@ export class ModelDesignerComponent extends Component<ModelDesignerComponentProp
       this.setState({ locale });
     });
 
-    // 监听全局事件
-    window.addEventListener('model-designer-undo', this.handleUndo as any);
-    window.addEventListener('model-designer-redo', this.handleRedo as any);
-    window.addEventListener('model-designer-save', this.handleSave as any);
-    window.addEventListener('model-designer-export', this.handleExport as any);
+    // 订阅应用事件中心
+    const snapshot = appEventActor.getSnapshot();
+    this.lastCommandNonce = snapshot.context.commandNonce;
+    this.appEventSub = appEventActor.subscribe((state) => {
+      const { commandNonce, lastCommand } = state.context;
+      if (commandNonce === this.lastCommandNonce || !lastCommand) return;
+      this.lastCommandNonce = commandNonce;
+      switch (lastCommand) {
+        case 'undo':
+          this.handleUndo();
+          break;
+        case 'redo':
+          this.handleRedo();
+          break;
+        case 'save':
+          this.handleSave();
+          break;
+        case 'export':
+          this.handleExport();
+          break;
+        default:
+          break;
+      }
+    });
   }
 
   /**
@@ -90,12 +112,7 @@ export class ModelDesignerComponent extends Component<ModelDesignerComponentProp
     if (this.unsubscribeI18n) {
       this.unsubscribeI18n();
     }
-    
-    // 移除事件监听
-    window.removeEventListener('model-designer-undo', this.handleUndo as any);
-    window.removeEventListener('model-designer-redo', this.handleRedo as any);
-    window.removeEventListener('model-designer-save', this.handleSave as any);
-    window.removeEventListener('model-designer-export', this.handleExport as any);
+    this.appEventSub?.unsubscribe();
     
     // 销毁管理器
     this.dataManager.destroy();

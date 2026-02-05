@@ -12,6 +12,7 @@ import { ResultViewerComponent } from '../pages/ResultViewerComponent';
 import { getModeConfig, MODE_ICONS } from '../types/modes';
 import type { AppMode } from '../types/modes';
 import { t, i18n } from '../i18n';
+import { appEventActor } from '../state/appEventCenter';
 import '../App.css';
 
 export interface AppComponentProps {
@@ -29,12 +30,14 @@ interface AppComponentState {
  */
 export class AppComponent extends Component<AppComponentProps, AppComponentState> {
   private unsubscribeI18n?: () => void;
+  private appEventSub?: { unsubscribe: () => void };
 
   constructor(props: AppComponentProps) {
     super(props);
+    const appSnapshot = appEventActor.getSnapshot();
     this.state = {
-      currentPage: 'model',
-      currentMode: 'select',
+      currentPage: appSnapshot.context.currentPage,
+      currentMode: appSnapshot.context.currentMode,
       locale: i18n.getLocale(),
     };
   }
@@ -47,6 +50,13 @@ export class AppComponent extends Component<AppComponentProps, AppComponentState
     this.unsubscribeI18n = i18n.subscribe((locale) => {
       this.setState({ locale });
     });
+    // 订阅应用事件中心
+    this.appEventSub = appEventActor.subscribe((state) => {
+      this.setState({
+        currentPage: state.context.currentPage,
+        currentMode: state.context.currentMode,
+      });
+    });
   }
 
   /**
@@ -55,20 +65,21 @@ export class AppComponent extends Component<AppComponentProps, AppComponentState
   public componentWillUnmount(): void {
     // 取消订阅
     this.unsubscribeI18n?.();
+    this.appEventSub?.unsubscribe();
   }
 
   /**
    * 切换页面
    */
   private handlePageChange = (page: 'model' | 'query' | 'result'): void => {
-    this.setState({ currentPage: page, currentMode: 'select' });
+    appEventActor.send({ type: 'NAVIGATE', page });
   };
 
   /**
    * 切换模式
    */
   private handleModeChange = (mode: AppMode): void => {
-    this.setState({ currentMode: mode });
+    appEventActor.send({ type: 'SET_MODE', mode });
   };
 
   /**
@@ -207,28 +218,28 @@ export class AppComponent extends Component<AppComponentProps, AppComponentState
    * 处理撤销
    */
   private handleUndo = (): void => {
-    window.dispatchEvent(new CustomEvent('model-designer-undo'));
+    appEventActor.send({ type: 'COMMAND', command: 'undo' });
   };
 
   /**
    * 处理重做
    */
   private handleRedo = (): void => {
-    window.dispatchEvent(new CustomEvent('model-designer-redo'));
+    appEventActor.send({ type: 'COMMAND', command: 'redo' });
   };
 
   /**
    * 处理保存
    */
   private handleSave = (): void => {
-    window.dispatchEvent(new CustomEvent('model-designer-save'));
+    appEventActor.send({ type: 'COMMAND', command: 'save' });
   };
 
   /**
    * 处理导出
    */
   private handleExport = (): void => {
-    window.dispatchEvent(new CustomEvent('model-designer-export'));
+    appEventActor.send({ type: 'COMMAND', command: 'export' });
   };
 
   /**

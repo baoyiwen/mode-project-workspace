@@ -709,160 +709,198 @@ export class ModelDesignerGraphComponent extends SVGComponent<ModelDesignerGraph
     }
 
     // ========== 2. 等间距辅助线 ==========
-    // 当画布上有2个及以上其他实体时，检测等间距对齐
+    // 当拖拽实体与相邻实体的间距等于其他相邻实体对的间距时，显示所有相等的间距辅助线
     
-    const sortedByX = [...otherEntities].sort((a, b) => (a.x || 0) - (b.x || 0));
-    const sortedByY = [...otherEntities].sort((a, b) => (a.y || 0) - (b.y || 0));
+    const gapThreshold = 15; // 间距相等的容差
+    const minGap = 30; // 最小间距（小于此值不显示辅助线）
     
-    // 水平方向等间距检测（需要至少2个其他实体）
-    if (sortedByX.length >= 2) {
-      // 计算辅助线的 Y 位置（在所有实体下方）
-      const baseY = Math.max(...otherEntities.map(e => e.y || 0), newY) + 80;
-
-      // 计算现有实体之间的间距
-      const horizontalGaps: number[] = [];
-      for (let i = 1; i < sortedByX.length; i++) {
-        const gap = Math.abs((sortedByX[i].x || 0) - (sortedByX[i - 1].x || 0));
-        horizontalGaps.push(gap);
+    // 水平方向等间距检测（需要至少1个其他实体）
+    if (otherEntities.length >= 1) {
+      // 将被拖拽实体（使用当前位置）加入列表，按 X 排序
+      const allEntitiesX = [...otherEntities, { ...draggedEntity, x: snappedX, y: newY }]
+        .sort((a, b) => (a.x || 0) - (b.x || 0));
+      
+      // 找到被拖拽实体在排序后的索引
+      const dragIndex = allEntitiesX.findIndex(e => e.id === draggedEntity.id);
+      
+      // 计算所有相邻实体对的间距
+      const gaps: Array<{ left: number; right: number; gap: number; index: number }> = [];
+      for (let i = 0; i < allEntitiesX.length - 1; i++) {
+        const leftX = allEntitiesX[i].x || 0;
+        const rightX = allEntitiesX[i + 1].x || 0;
+        gaps.push({ left: leftX, right: rightX, gap: rightX - leftX, index: i });
       }
-
-      // 检查间距是否都相同（允许一定误差，放宽到20像素）
-      const gapThreshold = 20;
-      const firstGap = horizontalGaps[0];
-      const allGapsSame = horizontalGaps.length === 1 || horizontalGaps.every(gap => Math.abs(gap - firstGap) < gapThreshold);
-
-      if (allGapsSame && firstGap > 20) { // 间距至少20像素
-        const commonGap = firstGap;
-        const leftMostX = sortedByX[0].x || 0;
-        const rightMostX = sortedByX[sortedByX.length - 1].x || 0;
-
-        // 检查放在最左边（等间距位置）
-        const snapLeftX = leftMostX - commonGap;
-        if (Math.abs(snappedX - snapLeftX) < threshold) {
-          snappedX = snapLeftX;
-          const allPositions = [snappedX, ...sortedByX.map(e => e.x || 0)].sort((a, b) => a - b);
-          for (let i = 0; i < allPositions.length - 1; i++) {
-            spacingSegments.push({
-              type: 'horizontal',
-              start: allPositions[i],
-              end: allPositions[i + 1],
-              base: baseY,
-            });
+      
+      // 计算辅助线的 Y 位置（在所有实体下方）
+      const baseY = Math.max(...allEntitiesX.map(e => e.y || 0)) + 80;
+      
+      // 获取被拖拽实体涉及的间距
+      const draggedGapIndices: number[] = [];
+      if (dragIndex > 0) draggedGapIndices.push(dragIndex - 1); // 左边间距
+      if (dragIndex < gaps.length) draggedGapIndices.push(dragIndex); // 右边间距
+      
+      // 找到目标间距值（被拖拽实体涉及的间距）
+      const targetGaps = draggedGapIndices
+        .map(i => gaps[i])
+        .filter(g => g && g.gap >= minGap);
+      
+      // 对于每个目标间距，找出所有与其相等的间距
+      const matchedGapSet = new Set<number>(); // 使用 index 去重
+      
+      targetGaps.forEach(targetGap => {
+        // 找到所有与目标间距相等的间距（包括目标间距本身）
+        gaps.forEach(g => {
+          if (g.gap >= minGap && Math.abs(g.gap - targetGap.gap) < gapThreshold) {
+            matchedGapSet.add(g.index);
           }
+        });
+      });
+      
+      // 只有当匹配到2个或以上的间距时才显示
+      if (matchedGapSet.size >= 2) {
+        matchedGapSet.forEach(index => {
+          const g = gaps[index];
+          spacingSegments.push({
+            type: 'horizontal',
+            start: g.left,
+            end: g.right,
+            base: baseY,
+          });
+        });
+      }
+      
+      // 吸附功能：如果接近某个等间距位置，自动吸附
+      if (otherEntities.length >= 2) {
+        const sortedOthersX = [...otherEntities].sort((a, b) => (a.x || 0) - (b.x || 0));
+        
+        // 计算其他实体之间的平均间距
+        const otherGapsOnly: number[] = [];
+        for (let i = 1; i < sortedOthersX.length; i++) {
+          otherGapsOnly.push((sortedOthersX[i].x || 0) - (sortedOthersX[i - 1].x || 0));
         }
-        // 检查放在最右边（等间距位置）
-        else if (Math.abs(snappedX - (rightMostX + commonGap)) < threshold) {
-          snappedX = rightMostX + commonGap;
-          const allPositions = [...sortedByX.map(e => e.x || 0), snappedX].sort((a, b) => a - b);
-          for (let i = 0; i < allPositions.length - 1; i++) {
-            spacingSegments.push({
-              type: 'horizontal',
-              start: allPositions[i],
-              end: allPositions[i + 1],
-              base: baseY,
-            });
-          }
-        }
-        // 检查放在中间位置（等间距）
-        else {
-          for (let i = 0; i < sortedByX.length - 1; i++) {
-            const leftX = sortedByX[i].x || 0;
-            const rightX = sortedByX[i + 1].x || 0;
+        
+        if (otherGapsOnly.length > 0) {
+          const avgGap = otherGapsOnly.reduce((a, b) => a + b, 0) / otherGapsOnly.length;
+          
+          // 吸附到中点位置
+          for (let i = 0; i < sortedOthersX.length - 1; i++) {
+            const leftX = sortedOthersX[i].x || 0;
+            const rightX = sortedOthersX[i + 1].x || 0;
             const midX = (leftX + rightX) / 2;
             
             if (Math.abs(snappedX - midX) < threshold) {
               snappedX = midX;
-              spacingSegments.push({
-                type: 'horizontal',
-                start: leftX,
-                end: snappedX,
-                base: baseY,
-              });
-              spacingSegments.push({
-                type: 'horizontal',
-                start: snappedX,
-                end: rightX,
-                base: baseY,
-              });
               break;
             }
+          }
+          
+          // 吸附到两端等间距位置
+          const firstOtherX = sortedOthersX[0].x || 0;
+          const lastOtherX = sortedOthersX[sortedOthersX.length - 1].x || 0;
+          
+          const snapLeftX = firstOtherX - avgGap;
+          if (Math.abs(snappedX - snapLeftX) < threshold) {
+            snappedX = snapLeftX;
+          }
+          const snapRightX = lastOtherX + avgGap;
+          if (Math.abs(snappedX - snapRightX) < threshold) {
+            snappedX = snapRightX;
           }
         }
       }
     }
 
-    // 垂直方向等间距检测（需要至少2个其他实体）
-    if (sortedByY.length >= 2) {
-      // 计算辅助线的 X 位置（在所有实体右侧）
-      const baseX = Math.max(...otherEntities.map(e => e.x || 0), newX) + 80;
-
-      // 计算现有实体之间的间距
-      const verticalGaps: number[] = [];
-      for (let i = 1; i < sortedByY.length; i++) {
-        const gap = Math.abs((sortedByY[i].y || 0) - (sortedByY[i - 1].y || 0));
-        verticalGaps.push(gap);
+    // 垂直方向等间距检测（需要至少1个其他实体）
+    if (otherEntities.length >= 1) {
+      // 将被拖拽实体（使用当前位置）加入列表，按 Y 排序
+      const allEntitiesY = [...otherEntities, { ...draggedEntity, x: newX, y: snappedY }]
+        .sort((a, b) => (a.y || 0) - (b.y || 0));
+      
+      // 找到被拖拽实体在排序后的索引
+      const dragIndex = allEntitiesY.findIndex(e => e.id === draggedEntity.id);
+      
+      // 计算所有相邻实体对的间距
+      const gaps: Array<{ top: number; bottom: number; gap: number; index: number }> = [];
+      for (let i = 0; i < allEntitiesY.length - 1; i++) {
+        const topY = allEntitiesY[i].y || 0;
+        const bottomY = allEntitiesY[i + 1].y || 0;
+        gaps.push({ top: topY, bottom: bottomY, gap: bottomY - topY, index: i });
       }
-
-      // 检查间距是否都相同（允许一定误差，放宽到20像素）
-      const gapThreshold = 20;
-      const firstGap = verticalGaps[0];
-      const allGapsSame = verticalGaps.length === 1 || verticalGaps.every(gap => Math.abs(gap - firstGap) < gapThreshold);
-
-      if (allGapsSame && firstGap > 20) { // 间距至少20像素
-        const commonGap = firstGap;
-        const topMostY = sortedByY[0].y || 0;
-        const bottomMostY = sortedByY[sortedByY.length - 1].y || 0;
-
-        // 检查放在最上边（等间距位置）
-        const snapTopY = topMostY - commonGap;
-        if (Math.abs(newY - snapTopY) < threshold) {
-          snappedY = snapTopY;
-          const allPositions = [snappedY, ...sortedByY.map(e => e.y || 0)].sort((a, b) => a - b);
-          for (let i = 0; i < allPositions.length - 1; i++) {
-            spacingSegments.push({
-              type: 'vertical',
-              start: allPositions[i],
-              end: allPositions[i + 1],
-              base: baseX,
-            });
+      
+      // 计算辅助线的 X 位置（在所有实体右侧）
+      const baseX = Math.max(...allEntitiesY.map(e => e.x || 0)) + 80;
+      
+      // 获取被拖拽实体涉及的间距
+      const draggedGapIndices: number[] = [];
+      if (dragIndex > 0) draggedGapIndices.push(dragIndex - 1); // 上边间距
+      if (dragIndex < gaps.length) draggedGapIndices.push(dragIndex); // 下边间距
+      
+      // 找到目标间距值（被拖拽实体涉及的间距）
+      const targetGaps = draggedGapIndices
+        .map(i => gaps[i])
+        .filter(g => g && g.gap >= minGap);
+      
+      // 对于每个目标间距，找出所有与其相等的间距
+      const matchedGapSet = new Set<number>(); // 使用 index 去重
+      
+      targetGaps.forEach(targetGap => {
+        // 找到所有与目标间距相等的间距（包括目标间距本身）
+        gaps.forEach(g => {
+          if (g.gap >= minGap && Math.abs(g.gap - targetGap.gap) < gapThreshold) {
+            matchedGapSet.add(g.index);
           }
+        });
+      });
+      
+      // 只有当匹配到2个或以上的间距时才显示
+      if (matchedGapSet.size >= 2) {
+        matchedGapSet.forEach(index => {
+          const g = gaps[index];
+          spacingSegments.push({
+            type: 'vertical',
+            start: g.top,
+            end: g.bottom,
+            base: baseX,
+          });
+        });
+      }
+      
+      // 吸附功能：如果接近某个等间距位置，自动吸附
+      if (otherEntities.length >= 2) {
+        const sortedOthersY = [...otherEntities].sort((a, b) => (a.y || 0) - (b.y || 0));
+        
+        // 计算其他实体之间的平均间距
+        const otherGapsOnly: number[] = [];
+        for (let i = 1; i < sortedOthersY.length; i++) {
+          otherGapsOnly.push((sortedOthersY[i].y || 0) - (sortedOthersY[i - 1].y || 0));
         }
-        // 检查放在最下边（等间距位置）
-        else if (Math.abs(newY - (bottomMostY + commonGap)) < threshold) {
-          snappedY = bottomMostY + commonGap;
-          const allPositions = [...sortedByY.map(e => e.y || 0), snappedY].sort((a, b) => a - b);
-          for (let i = 0; i < allPositions.length - 1; i++) {
-            spacingSegments.push({
-              type: 'vertical',
-              start: allPositions[i],
-              end: allPositions[i + 1],
-              base: baseX,
-            });
-          }
-        }
-        // 检查放在中间位置（等间距）
-        else {
-          for (let i = 0; i < sortedByY.length - 1; i++) {
-            const topY = sortedByY[i].y || 0;
-            const bottomY2 = sortedByY[i + 1].y || 0;
-            const midY = (topY + bottomY2) / 2;
+        
+        if (otherGapsOnly.length > 0) {
+          const avgGap = otherGapsOnly.reduce((a, b) => a + b, 0) / otherGapsOnly.length;
+          
+          // 吸附到中点位置
+          for (let i = 0; i < sortedOthersY.length - 1; i++) {
+            const topY = sortedOthersY[i].y || 0;
+            const bottomY = sortedOthersY[i + 1].y || 0;
+            const midY = (topY + bottomY) / 2;
             
-            if (Math.abs(newY - midY) < threshold) {
+            if (Math.abs(snappedY - midY) < threshold) {
               snappedY = midY;
-              spacingSegments.push({
-                type: 'vertical',
-                start: topY,
-                end: snappedY,
-                base: baseX,
-              });
-              spacingSegments.push({
-                type: 'vertical',
-                start: snappedY,
-                end: bottomY2,
-                base: baseX,
-              });
               break;
             }
+          }
+          
+          // 吸附到两端等间距位置
+          const firstOtherY = sortedOthersY[0].y || 0;
+          const lastOtherY = sortedOthersY[sortedOthersY.length - 1].y || 0;
+          
+          const snapTopY = firstOtherY - avgGap;
+          if (Math.abs(snappedY - snapTopY) < threshold) {
+            snappedY = snapTopY;
+          }
+          const snapBottomY = lastOtherY + avgGap;
+          if (Math.abs(snappedY - snapBottomY) < threshold) {
+            snappedY = snapBottomY;
           }
         }
       }
